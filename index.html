@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Good Writing Posture</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="style.css" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- import the webpage's stylesheet -->
+    <!-- <link rel="stylesheet" href="style.css"> -->
+    <link rel="stylesheet" href="node_modules/bootstrap/dist/css/bootstrap.min.css">
+
+    <!-- load p5.js -->
+    <!-- We use p5.js to get access to the webcamera and use canvas easier -->
+    <script src="node_modules/p5/lib/p5.min.js"></script>
+    <script src="node_modules/p5/lib/addons/p5.dom.min.js"></script>
+    <script src="node_modules/p5/lib/addons/p5.sound.min.js"></script>
+    <script type="text/javascript" src="node_modules\echarts\dist\echarts.min.js"></script>
+    <!-- load ml5.js -->
+    <!-- We use ml5.js because of simple syntax. Simple syntax forever. <3 -->
+    <script src="node_modules/ml5/dist/ml5.min.js"></script>
+
+    <!-- Our logic is here -->
+    <script src="posenet.js"></script>
+    <!--The Chart's Script is here-->
+    <script src="chart.js"></script>
+
+    <style>
+        canvas {
+            width: 100% !important;
+            height: auto !important;
+        }
+    </style>
+</head>
+
+<body class="d-flex flex-column h-100 bg-light">
+    <header>
+        <!-- Fixed navbar -->
+        <nav class="navbar navbar-dark bg-dark align-middle">
+            <span class="navbar-brand" id="title" data-i18n="title">Good Posture</span>
+            <div class="btn-toolbar">
+                <!-- <button onclick="deleteGlobalShade()" type="button" id="darkbutton" class="btn btn-success" data-toggle="button"> Dark</button>
+                <button onclick="globalShade()" type="button" id="darkbutton" class="btn btn-success" data-toggle="button"> Light</button> -->
+                <div class="btn-group btn-group-toggle mr-3 " id="detectMode" data-toggle="buttons">
+                    <label class="btn btn-secondary btn-lg">
+            <input type="radio" name="options" value="0" autocomplete="off"><span data-i18n="mode.loose">Loose</span>
+          </label>
+                    <label class="btn btn-secondary active btn-lg">
+            <input type="radio" name="options" value="1" autocomplete="off" checked ><span data-i18n="mode.general">General</span>
+          </label>
+                    <label class="btn btn-secondary btn-lg">
+            <input type="radio" name="options" value="2" autocomplete="off"><span data-i18n="mode.strict">Strict</span>
+          </label>
+                </div>
+                <button onclick="start()" id="startbutton" data-i18n="start" class="btn btn-outline-success btn-lg">Start</button>
+            </div>
+        </nav>
+    </header>
+    <div id="backcolor">
+        <div style="margin-top: 10%;">
+            <span id="detect-time" data-i18n="detect-time" class="text-info" style="text-align: center;font-size: 30px; position: relative;top: 28%; left: 16%;">监测时间:</span>
+            <span class="text-info" id="mask_timer" style="text-align: center;font-size: 30px;font-size: 30px; position: relative;top: 28%; left: 16%;">N/A</span>
+            <p></p>
+            <span id="right-time" data-i18n="right-time" class="text-success" style="text-align: center; position: relative;top: 38%; left: 16%;font-size: 30px;">正确时间:</span>
+            <span class="text-success" id="mask_goodtime" style="text-align: center;font-size: 30px; position: relative;top: 38%; left: 16%;">N/A</span>
+            <p></p>
+            <span id="error-time" data-i18n="error-time" class="text-danger" style="text-align: center;font-size: 30px; position: relative;top: 48%; left: 16%;">错误时间:</span>
+            <span class="text-danger" id="mask_badtime" style="text-align: center; position: relative;font-size: 30px;top: 48%; left: 16%;">N/A</span>
+            <p></p>
+            <div style="text-align: center; width:130px;height:100px;background-color:rgb(97, 180, 97);border-radius:50%;position: absolute;left: 50%;top: 23%;"><strong id="goodpercentAge" style="position: absolute; top: 22%;left: 30%;font-size: 20px;">N/A</strong></div>
+            <div style=" text-align: center; width:130px;height:100px;background-color:rgb(211, 49, 49);border-radius:50%;position: absolute;left: 70%;top: 23%;"><strong id="badpercentAge" style="position: absolute;top: 22%;left: 30%;font-size: 20px;">N/A</strong></div>
+        </div>
+        <button id="exit-button" data-i18n="exit-button" onclick="globalShade()" style="font-size: 20px; position: absolute; bottom: 10%; right: 8%;" type="button" class="btn btn-dark" data-toggle="modal">
+            Exit Mode
+          </button>
+    </div>
+    <div id="mask">
+        <div class="alert alert-primary rounded-0 text-center" id="reminderText" role="alert">
+            Maintain good posture before starting...
+        </div>
+        <div class="bg-light" style="position: relative;">
+            <div class="container">
+                <div class="card-deck mb-3 text-center">
+                    <div class="card shadow-sm text-light bg-success">
+                        <div class="card-header d-flex justify-content-between align-items-center ">
+                            <div class="card-text" id="good-posture-card-text" data-i18n="good-posture-card-title">Good posture</div>
+                            <!-- <button type="button" class="btn btn-sm btn-outline-secondary">Retake</button> -->
+                        </div>
+                        <div class="card-body h-100">
+                            <img src="" id="good-posture" class="img-fluid" />
+                        </div>
+                    </div>
+                    <div class="card shadow-sm text-light bg-dark" id="dectection-card">
+                        <div class="card-header d-flex justify-content-between align-items-center ">
+                            <div class="card-text" id="live-detection-card-text" data-i18n="live-detection-card-title">Live detection</div>
+
+                        </div>
+                        <div class="card-body h-100">
+                            <div id="videoContainer"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button style="visibility: none; position: absolute; right: 13%; background-color:  rgb(128, 128, 128,0.3); width: 180px;" onclick="History_Click()" type="button" class="btn btn-default" data-toggle="modal" data-target="#creditModal1" id="history" data-i18n="history-document">
+                        历史记录
+                </button>
+            <button style="position: absolute;  right: 13%; bottom: -100px; background-color:  rgb(128, 128, 128,0.3); width: 180px;" onclick="deleteGlobalShade()" class="btn btn-default" type="button" class="btn btn-default text-lg-right" id="no-disturb" data-i18n="no-disturb">
+                        免打扰模式
+                </button>
+
+            <footer class="fixed-bottom  mt-auto py-3 text-right">
+                <div class="d-flex flex-row justify-content-between align-items-center container">
+                    <div>
+                        <button type="button" class="btn btn-link" data-toggle="modal" data-target="#creditModal">
+            Credits
+          </button></div>
+                    <script>
+                        var kaishi = document.getElementById("startbutton");
+                        var i = 1;
+                        kaishi.onclick = function() {
+                            var lishi = document.getElementById("history");
+                            if (i == 1) {
+                                lishi.style.visibility = "hidden"; //隐藏
+                                i = 0;
+                            } else {
+                                lishi.style.visibility = "visible"; //显示
+                                i = 1;
+                            }
+                            start();
+                        }
+                    </script>
+                    <div>
+                        <span class="text-muted">For my kiddo.</span>
+                    </div>
+                </div>
+        </div>
+        </footer>
+        <!-- Button trigger modal -->
+        <!-- Modal -->
+        <div id="show">
+            <div class="container">
+                <span id="detects-time" data-i18n="detect-time" class="text-info ">监测时间:</span><span class="text-info " id="timer">N/A</span>
+                <p></p>
+                <span id="rights-time" data-i18n="right-time" class="text-success">正确坐姿:</span><span class="text-success" id="goodtime">N/A</span>
+                <p></p>
+                <span id="errors-time" data-i18n="error-time" class="text-danger">错误坐姿:</span><span class="text-danger" id="badtime">N/A</span>
+                <p></p>
+            </div>
+        </div>
+        <div class="modal fade" id="creditModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="creditModalLabel">Credits</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <p>This app uses these sounds from freesound:</p>
+                        <ul>
+                            <li>S: Cat, Screaming, A.wav by InspectorJ -- https://freesound.org/s/415209/ -- License: Attribution
+                            </li>
+                            <li>S: LBS_FX DOG Small Alert Bark001.wav by LittleBigSounds -- https://freesound.org/s/163459/ -- License: Creative Commons </li>
+                            <li>S: Decline Buzz/Beep by TannerSound -- https://freesound.org/s/478262/ -- License: Attribution
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="creditModal1" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="title_history" data-i18n="creditModalLabel_history">History</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div style="height: 400px;; margin: 0 ">
+                            <div id="container" style="height: 100%"></div>
+
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal" id="btn-close" data-i18n="btn_close">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="creditModalData" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="No_disturb_Modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal-dialog modal-full" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="myModalLabel" data-i18n="no-disturb">免打扰模式</h4>
+                </div>
+                <div class="card  text-light text-left">
+                    <div>
+                        <img src="" id="good-posture_mask" class="img-fluid" />
+                    </div>
+                </div>
+                <div class="text-left">
+                    <p class="text-lg-center font-weight-bold" style="margin: 0%;" id="detect-content" data-i18n="detect-content">是否进入免打扰模式?免打扰模式开始后，屏幕将变黑！</p>
+                </div>
+                <div class="modal-footer">
+                    <div class="col-sm-6"><span id="no-prompt" class="font-weight-bold" data-i18n="no-prompt" style="margin-bottom:10px">不再提示</span>&nbsp;<input type="checkbox" id="ifClose" style="width: 18px;
+                        height: 30px; position: absolute; float: left;margin-top: 0px; border: 10px solid green;"></div>
+                    </script>
+                    <button data-i18n="no-close" id="no-close" onclick="globalShade()" type="button" class="btn btn" style="background-color: gray; color: honeydew;" data-dismiss="modal"><span class="glyphicon glyphicon-remove" aria-hidden="true" ></span>取消</button>
+                    <button data-i18n="no-ok" id="no-ok" onclick="deleteGlobalShade()" type="button" id="btn_submit" class="btn btn-success" data-dismiss="modal"><span class="glyphicon glyphicon-floppy-disk" aria-hidden="true"></span>进入勿扰模式</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- 提示模态框 -->
+    <div class="modal fade" id="alertModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal-dialog modal-full" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="warm-prompt" data-i18n="warm-prompt">温馨提示：</h4>
+                </div>
+                <div>
+                    <p style="font-size: 20px;" id="just_relax" data-i18n="just_relax">注意劳逸结合哦！休息一下吧</p>
+                </div>
+                <!-- 以下这一段格式可能有用，具体参照免打扰弹出框 -->
+                <!-- <div class="text-left">
+                    <p class="text-lg-center font-weight-bold" style="margin: 0%;" id="detect-content" data-i18n="detect-content">是否进入免打扰模式?免打扰模式开始后，屏幕将变黑！</p>
+                </div> -->
+                <div class="modal-footer">
+                    <div class="col-sm-6"><span id="no-alert" class="font-weight-bold" data-i18n="no-alert" style="margin-bottom:10px">不再提示</span>&nbsp;<input type="checkbox" id="ifalertClose" style="width: 18px;
+                        height: 30px; position: absolute; float: left;margin-top: 0px; border: 10px solid green;"></div>
+                    </script>
+                    <button data-i18n="alert-know" id="alert-know" type="button" id="btn_submit" class="btn btn-success" data-dismiss="modal"><span class="glyphicon glyphicon-floppy-disk" aria-hidden="true"></span>我知道了</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+</body>
+
+</html>

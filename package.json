@@ -1,0 +1,81 @@
+{
+  "name": "fixedpose-electron",
+  "version": "1.1.1",
+  "description": "Capture your good posture and Maintaining with it!",
+  "main": "index.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "pack": "electron-builder --dir",
+    "dist": " electron-builder",
+    "release": "resources/release.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hddevteam/fixedpose-electron.git"
+  },
+  "keywords": [
+    "Machine Learning",
+    "Posenet"
+  ],
+  "author": "luckyXmobile",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/hddevteam/fixedpose-electron/issues"
+  },
+  "homepage": "https://github.com/hddevteam/fixedpose-electron#readme",
+  "devDependencies": {
+    "electron": "^6.0.9",
+    "electron-builder": "^21.2.0"
+  },
+  "dependencies": {
+    "bootstrap": "^4.3.1",
+    "csv-write-stream": "^2.0.0",
+    "echarts": "^4.4.0",
+    "i18next": "^17.0.18",
+    "i18next-electron-language-detector": "0.0.10",
+    "jquery": "^3.4.1",
+    "jquery-i18next": "^1.2.1",
+    "ml5": "^0.3.1",
+    "p5": "^0.9.0",
+    "popper.js": "^1.15.0"
+  },
+  "build": {
+    "productName": "Good Writing Posture",
+    "appId": "com.luckyxmobile.goodposture",
+    "copyright": "Copyright © 2019 ${author}",
+    "mac": {
+      "category": "public.app-category.healthcare-fitness",
+      "target": "mas",
+      "entitlements": "build/entitlements.mac.plist",
+      "type": "distribution",
+      "icon": "build/icon.icns"
+    },
+    "mas": {
+      "entitlements": "build/entitlements.mas.plist",
+      "extendInfo": "build/info.plist",
+      "type": "distribution",
+      "category": "public.app-category.healthcare-fitness"
+    },
+    "files": [
+      "**/*",
+      "!resources${/*}",
+      "!privacy${/*}",
+      "embedded.provisionprofile"
+    ],
+    "win": {
+      "target": "appx"
+    },
+    "directories": {
+      "buildResources": "build"
+    },
+    "appx": {
+      "identityName": "46443wht.GoodPosture",
+      "applicationId": "goodposture",
+      "backgroundColor": "#464646",
+      "displayName": "Good Posture",
+      "publisher": "CN=9EFD7321-C9DA-4721-AC02-2F7F05292EE3",
+      "publisherDisplayName": "luckyXmobile"
+    }
+  }
+}
